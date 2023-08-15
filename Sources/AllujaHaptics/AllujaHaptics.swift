@@ -5,6 +5,7 @@ public typealias EngineResetHandler = (CHHapticEngine?) -> Void
 public typealias EngineStopHandler = (CHHapticEngine?, CHHapticEngine.StoppedReason) -> Void
 public typealias PlayersFinishedHandler = (CHHapticEngine?, Error?) -> CHHapticEngine.FinishedAction
 
+/// AllujaHaptics control class
 public final class Haptics {
 
     public enum HapticsError: LocalizedError {
@@ -12,6 +13,7 @@ public final class Haptics {
         case emptyPattern
     }
 
+    /// A generated haptic pattern, ready to be played
     public final class GeneratedHapticPattern {
         fileprivate init(pattern: CHHapticPattern, generatePlayer: Bool) throws {
             self.pattern = pattern
@@ -23,10 +25,7 @@ public final class Haptics {
         private let pattern: CHHapticPattern
         private var player: CHHapticPatternPlayer!
 
-        var duration: TimeInterval {
-            pattern.duration
-        }
-
+        /// Attempts to play the pattern
         public func play() throws {
             guard let engine = Haptics.shared.engine else { throw HapticsError.engineNil }
             if player == nil {
@@ -58,6 +57,11 @@ public final class Haptics {
         }
     }
     
+    /// Initializes the shared `Haptics` instance, optionally changing various behaviors
+    /// - `engineReset`: Callback for when the engine resets due to the app losing focus
+    /// - `autoShutdown`: Whether the engine should shutdown automatically
+    /// - `stopHandler`: Callback for when the engine stops
+    /// - `playersFinished`: What the engine should do when all haptics finish playing
     public static func initialize(withEngineResetHandler engineReset: @escaping EngineResetHandler = { try? $0?.start() }, withAutoShutdown autoShutdown: Bool = false, withStopHandler stopHandler: @escaping EngineStopHandler = { _,_  in }, withPlayersFinishedHandler playersFinished: @escaping PlayersFinishedHandler = { $1 != nil ? .stopEngine : .leaveEngineRunning }) throws {
         shared = try .init(withEngineResetHandler: engineReset, withAutoShutdown: autoShutdown, withStopHandler: stopHandler, withPlayersFinishedHandler: playersFinished)
     }
@@ -66,7 +70,8 @@ public final class Haptics {
         engine?.stop(completionHandler: nil)
     }
 
-    func restartEngine() throws {
+    /// Forcefully tries to start the haptics engine
+    public func startEngine() throws {
         try engine?.start()
     }
 
@@ -105,7 +110,9 @@ public final class Haptics {
     }
 
     public enum HapticPatternComponent {
+        /// Delay in a haptic pattern, nothing will be played
         case delay(TimeInterval)
+        /// A haptic impact that will produce a force for the user
         case impact(HapticPatternStrength, HapticPatternSharpness)
     }
 
@@ -161,6 +168,7 @@ public final class Haptics {
     }
 }
 
+/// Some default haptic patterns
 public struct DefaultHapticPatterns {
     private init() {}
 
