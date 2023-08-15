@@ -1,9 +1,13 @@
 import Foundation
 import CoreHaptics
 
+public typealias EngineResetHandler = (CHHapticEngine?) -> Void
+public typealias EngineStopHandler = (CHHapticEngine?, CHHapticEngine.StoppedReason) -> Void
+public typealias PlayersFinishedHandler = (CHHapticEngine?, Error?) -> CHHapticEngine.FinishedAction
+
 public final class Haptics {
 
-    enum HapticsError: LocalizedError {
+    public enum HapticsError: LocalizedError {
         case engineNil
         case emptyPattern
     }
@@ -23,7 +27,7 @@ public final class Haptics {
             pattern.duration
         }
 
-        func play() throws {
+        public func play() throws {
             guard let engine = Haptics.shared.engine else { throw HapticsError.engineNil }
             if player == nil {
                 try createPlayer()
@@ -38,10 +42,10 @@ public final class Haptics {
         }
     }
 
-    static private(set) var shared: Haptics!
+    public static private(set) var shared: Haptics!
 
     private let engine: CHHapticEngine?
-    let deviceSupportsHaptics: Bool
+    public let deviceSupportsHaptics: Bool
 
     private init(withEngineResetHandler engineReset: @escaping EngineResetHandler, withAutoShutdown autoShutdown: Bool, withStopHandler stopHandler: @escaping EngineStopHandler, withPlayersFinishedHandler playersFinished: @escaping PlayersFinishedHandler) throws {
         deviceSupportsHaptics = CHHapticEngine.capabilitiesForHardware().supportsHaptics
@@ -54,7 +58,7 @@ public final class Haptics {
         }
     }
     
-    static func initialize(withEngineResetHandler engineReset: @escaping EngineResetHandler = { try? $0?.start() }, withAutoShutdown autoShutdown: Bool = false, withStopHandler stopHandler: @escaping EngineStopHandler = { _,_  in }, withPlayersFinishedHandler playersFinished: @escaping PlayersFinishedHandler = { $1 != nil ? .stopEngine : .leaveEngineRunning }) throws {
+    public static func initialize(withEngineResetHandler engineReset: @escaping EngineResetHandler = { try? $0?.start() }, withAutoShutdown autoShutdown: Bool = false, withStopHandler stopHandler: @escaping EngineStopHandler = { _,_  in }, withPlayersFinishedHandler playersFinished: @escaping PlayersFinishedHandler = { $1 != nil ? .stopEngine : .leaveEngineRunning }) throws {
         shared = try .init(withEngineResetHandler: engineReset, withAutoShutdown: autoShutdown, withStopHandler: stopHandler, withPlayersFinishedHandler: playersFinished)
     }
 
@@ -66,7 +70,7 @@ public final class Haptics {
         try engine?.start()
     }
 
-    enum HapticPatternSharpness {
+    public enum HapticPatternSharpness {
         case dull
         case sharp
         case custom(Float)
@@ -83,7 +87,7 @@ public final class Haptics {
         }
     }
     
-    enum HapticPatternStrength {
+    public enum HapticPatternStrength {
         case hard
         case soft
         case custom(Float)
@@ -100,7 +104,7 @@ public final class Haptics {
         }
     }
 
-    enum HapticPatternComponent {
+    public enum HapticPatternComponent {
         case delay(TimeInterval)
         case impact(HapticPatternStrength, HapticPatternSharpness)
     }
@@ -108,7 +112,7 @@ public final class Haptics {
     /// Generates a haptic pattern from the given components
     /// - `components`: The components to create the haptic pattern from
     /// - `generatePlayer`: Whether to immediately generate a haptic player, may be disabled if the haptic won't be used immediately as there is a performance penalty to creating one
-    static func generateHaptic(fromComponents components: [HapticPatternComponent],
+    public static func generateHaptic(fromComponents components: [HapticPatternComponent],
                                generatePlayer: Bool = true) throws -> GeneratedHapticPattern {
         if components.isEmpty {
             throw HapticsError.emptyPattern
@@ -136,10 +140,6 @@ public final class Haptics {
         return try GeneratedHapticPattern(pattern: try CHHapticPattern(events: hapticArray, parameters: []),
                                           generatePlayer: generatePlayer)
     }
-    
-    typealias EngineResetHandler = (CHHapticEngine?) -> Void
-    typealias EngineStopHandler = (CHHapticEngine?, CHHapticEngine.StoppedReason) -> Void
-    typealias PlayersFinishedHandler = (CHHapticEngine?, Error?) -> CHHapticEngine.FinishedAction
 
     private func completeEngineSetup(withEngineResetHandler engineReset: @escaping EngineResetHandler, withAutoShutdown autoShutdown: Bool, withStopHandler stopHandler: @escaping EngineStopHandler, withPlayersFinishedHandler playersFinished: @escaping PlayersFinishedHandler) throws { // swiftlint:disable:this cyclomatic_complexity
         engine!.resetHandler = {
